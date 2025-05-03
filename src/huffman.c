@@ -4,6 +4,22 @@
 
 #define ALPHABET_SIZE 0x100 
 
+// Select just nodes with frequency greater than 0
+static int select_nodes(Node* pq) {
+  int l = 0, r = ALPHABET_SIZE-1;
+  while(l < r) {
+    if (pq[r].frequency==0 && r >= 0) --r;
+    if (pq[l].frequency && l < ALPHABET_SIZE) ++l;
+    if (l < r) {
+      Node t = pq[r];
+      pq[r] = pq[l];
+      pq[l]=t;
+    }
+  }
+  while(pq[l].frequency)++l;
+  return l; //return new size
+}
+
 // nx2 matrix with the char, code and length
 // n is amount of chars
 // matrix[ni][0] is the generated code
@@ -20,22 +36,8 @@ int** hc_endoce_file(char* file_name) {
   }
   double tbytes = io_read_bytes(pq, file_name);
   // erase not used bytes
+  double size = select_nodes(pq);
   // priority queue
   // huffman tree
   // huffman code
-}
-
-int select_nodes(Node* pq) {
-  int l = 0, r = ALPHABET_SIZE-1;
-  while(l < r) {
-    if (pq[r].frequency==0 && r >= 0) --r;
-    if (pq[l].frequency && l < ALPHABET_SIZE) ++l;
-    if (l < r) {
-      Node t = pq[r];
-      pq[r] = pq[l];
-      pq[l]=t;
-    }
-  }
-  while(pq[l].frequency)++l;
-  return l;
 }
