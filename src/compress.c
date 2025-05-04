@@ -12,7 +12,7 @@ char compress_encode_files(FILE *file, int argc, char **argv) {
   //  escribir tamaño anterior
   char error = 0;
   for (int i; i < argc; ++i) {
-    int* huff_code = hc_endoce_file(argv[i]);
+    unsigned char** huff_code = hc_endoce_file(argv[i]);
     if (huff_code == NULL) {
       error = 1; 
       break;
