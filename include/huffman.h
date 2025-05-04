@@ -8,6 +8,6 @@ typedef struct Node {
   struct Node *left, *right;
 } Node;
 
-int** hc_endoce_file(char* file_name);
+unsigned char** hc_endoce_file(char* file_name);
 
 #endif

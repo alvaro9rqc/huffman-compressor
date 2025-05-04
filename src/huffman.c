@@ -1,9 +1,11 @@
 #include "huffman.h"
 #include "io_tool.h"
 #include "priority_queue.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 #define ALPHABET_SIZE 0x100 
+#define C_LENGHT 0
 
 // Select just nodes with frequency greater than 0
 static int select_nodes(Node* pq) {
@@ -22,15 +24,55 @@ static int select_nodes(Node* pq) {
 }
 
 // Build Huffman tree
-Node* hc_build_tree(PriorityQueue* pq) {
+static Node* hc_build_tree(PriorityQueue* pq) {
+  int nodes = pq->size;
+  for (int i = 0; i < nodes - 1; ++i) {
+    Node* n;
+    n->left = pq_top(pq);
+    pq_pop(pq);
+    n->right = pq_top(pq);
+    pq_pop(pq);
+    pq_push(pq, n);
+  }
+  return pq_top(pq);
+}
 
+static void hc_inorden(Node* node, unsigned char** code, int depth, unsigned char* prefix) {
+  if (node->is_leaf) {
+    size_t s = depth / 8 + 1; // this extra one is to save the depth
+    s += (depth % 8)? 1:0;
+    code[node->byte] = (unsigned char*) calloc(s, sizeof(unsigned char));
+    code[node->byte][C_LENGHT] = (unsigned char) depth;
+    for (int i = 0; i < depth; ++i) {
+      int idx = 1 + depth / 8; // this extra one is to save the depth
+      code[ node->byte ][idx] |= prefix[idx-1] & (1<<(depth % 8));
+    }
+  } else {
+    // visit left children (0)
+    hc_inorden(node->left, code, depth+1, prefix);
+    // visit right children (1)
+    int idx = depth / 8;
+    prefix[idx] |= (1<<( depth%8 )); //turn on bit
+    hc_inorden(node->right, code, depth+1, prefix);
+    //turn off bit
+    prefix[idx] = ~prefix[idx];
+    prefix[idx] |= (1<<( depth%8 ));
+    prefix[idx] = ~prefix[idx];
+  }
+}
+
+static unsigned char** hc_build_code(Node* root) {
+  unsigned char** code = (unsigned char**) calloc(ALPHABET_SIZE, sizeof(char*));
+  unsigned char* p = (unsigned char*)calloc(ALPHABET_SIZE, sizeof(unsigned char));
+  hc_inorden(root, code, 0, p);
+  return code;
 }
 
 // nx2 matrix with the char, code and length
-// n is amount of chars
+// n is char key
 // matrix[ni][0] is the generated code
-// matrix[mi][1] is the length of the code
-int** hc_endoce_file(char* file_name) {
+// matrix[ni][1] is the length of the code
+unsigned char** hc_endoce_file(char* file_name) {
   // Create nodes
   Node arr[ALPHABET_SIZE];
   // Initialization of each node
@@ -50,5 +92,7 @@ int** hc_endoce_file(char* file_name) {
   // huffman tree
   Node* root = hc_build_tree(&pq);
   // huffman code
+  unsigned char** code = hc_build_code(root);
   pq_erase(&pq);
+  return code; 
 }
