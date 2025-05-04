@@ -11,7 +11,8 @@ char compress_encode_files(FILE *file, int argc, char **argv) {
   //  guardar código
   //  escribir tamaño anterior
   char error = 0;
-  for (int i; i < argc; ++i) {
+  for (int i = 1; i < argc-1; ++i) {
+    printf("Comprimiendo: %s\n", argv[i]);
     unsigned char** huff_code = hc_endoce_file(argv[i]);
     if (huff_code == NULL) {
       error = 1; 

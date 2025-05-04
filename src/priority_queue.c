@@ -40,9 +40,9 @@ void pq_heapifyDown(PriorityQueue *pq, int idx){
     int l = 2*idx + 1;
     int r = l+1;
     int lowest = idx;
-    if (l < pq->size  && pq->arr[l] < pq->arr[lowest])
+    if (l < pq->size  && pq->arr[l]->frequency < pq->arr[lowest]->frequency)
       lowest = l;
-    if (r < pq->size && pq->arr[r] < pq->arr[lowest])
+    if (r < pq->size && pq->arr[r]->frequency < pq->arr[lowest]->frequency)
       lowest = r;
     if (lowest == idx) break;
     Node* t = pq->arr[lowest];
@@ -66,6 +66,7 @@ Node* pq_top(PriorityQueue* pq) {
     fprintf(stderr, "Error, se intentó extraer elemento de cola de prioridad vacía\n");
     exit(EXIT_FAILURE);
   }
+  fprintf(stderr, "p: %p v: %d f: %f\n", pq->arr[0], pq->arr[0]->byte, pq->arr[0]->frequency);
   return pq->arr[0];
 }
 
