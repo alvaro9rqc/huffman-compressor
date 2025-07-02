@@ -88,13 +88,14 @@ static unsigned char **hc_build_code(Node *root) {
   unsigned char *p =
       (unsigned char *)calloc(ALPHABET_SIZE, sizeof(unsigned char));
   hc_inorden(root, code, 0, p);
+  free(p);
   return code;
 }
 
 // similar a adjacent matrix
 // dynamic array of unsigned char arrays
 // each element contains size code and code
-unsigned char **hc_endoce_file(char *file_name) {
+unsigned char **hc_endoce_file(char *file_name, Node *root) {
   // Create nodes
   Node *arr = (Node *)malloc(ALPHABET_SIZE * sizeof(Node));
   // Initialization of each node
@@ -112,10 +113,31 @@ unsigned char **hc_endoce_file(char *file_name) {
   PriorityQueue pq;
   pq_new(&pq, arr, size);
   // huffman tree
-  Node *root = hc_build_tree(&pq);
+  root = hc_build_tree(&pq);
   // huffman code
   unsigned char **code = hc_build_code(root);
   pq_erase(&pq);
   free(arr);
   return code;
+}
+
+int hc_free_tree(Node *root) {
+  if (root == NULL)
+    return 0;
+  hc_free_tree(root->left);
+  hc_free_tree(root->right);
+  free(root);
+  return 0;
+}
+
+int hac_free_code(unsigned char **code) {
+  if (code == NULL)
+    return 0;
+  for (int i = 0; i < ALPHABET_SIZE; ++i) {
+    if (code[i] != NULL) {
+      free(code[i]);
+    }
+  }
+  free(code);
+  return 0;
 }
