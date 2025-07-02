@@ -57,9 +57,10 @@ static void hc_inorden(Node *node, unsigned char **code, int depth,
       code[node->byte][idx] |= (prefix[idx - 1] & (1 << (7 - i % 8)));
     }
     // just for demostration:
-    fprintf(stderr, "byte length code\n");
+    fprintf(stderr, "byte length value code\n");
     fprintf(stderr, "%4d ", node->byte);
     fprintf(stderr, "%6d ", code[node->byte][C_LENGHT]);
+    fprintf(stderr, "%5d ", code[node->byte][1]);
     for (int i = 0; i < depth; ++i) {
       int idx = 1 + i / 8;
       int r = (code[node->byte][idx] & (1 << (7 - i % 8))) > 0;

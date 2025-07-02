@@ -50,11 +50,12 @@ int io_write_huffman_code(FILE *wfile, unsigned char **huff_code,
     return -1;
   }
   // save file size
-  fseek(rfile, 0, SEEK_END);
-  long long file_size = ftell(rfile);
-  fseek(rfile, 0, SEEK_SET);
+  off_t file_size;
+  fseeko(rfile, 0, SEEK_END);
+  file_size = ftello(rfile);
+  fseeko(rfile, 0, SEEK_SET);
   // Write file size
-  if (fwrite(&file_size, sizeof(long long), 1, wfile) < 1) {
+  if (fwrite(&file_size, sizeof(off_t), 1, wfile) < 1) {
     fprintf(stderr, "Error writing file size to file.\n");
     fclose(rfile);
     return -1;
@@ -62,20 +63,28 @@ int io_write_huffman_code(FILE *wfile, unsigned char **huff_code,
   unsigned char rbuff[BUFFER_SIZE];
   size_t r_s = 0; // read bytes
   unsigned char wbuff[BUFFER_SIZE];
+  for (int i = 0; i < BUFFER_SIZE; ++i)
+    wbuff[i] = 0;
   size_t w_lim = BUFFER_SIZE * 8;
   size_t w_idx = 0; // new position in write buffer
+  int bit = 0;
   while ((r_s = fread(rbuff, 1, BUFFER_SIZE, rfile)) > 0) {
     for (size_t i = 0; i < r_s; ++i) {
       unsigned char c = rbuff[i];
       // if has space
+      printf("\n%c - %3d ", c, huff_code[c][0]);
       if (huff_code[c][0] <= w_lim - w_idx) {
         for (size_t j = 0; j < huff_code[c][0]; ++j) {
           // locate byte and write bit
-          wbuff[w_idx / 8] |= 1 << (7 - (w_idx % 8));
+          size_t ofs = w_idx % 8;
+          bit = (huff_code[c][j / 8 + 1] & 1 << (7 - (j % 8))) ? 1 : 0;
+          wbuff[w_idx / 8] |= bit << (7 - w_idx % 8);
+          printf("%d ", wbuff[w_idx / 8]);
           ++w_idx;
         }
       } else {
         // write buffer
+        fprintf(stderr, "Gaaa\n");
         size_t w_size = w_idx / 8;
         if (fwrite(wbuff, sizeof(unsigned char), w_size, wfile) < w_size) {
           fprintf(stderr, "Error writing huffman code to file.\n");
@@ -83,9 +92,10 @@ int io_write_huffman_code(FILE *wfile, unsigned char **huff_code,
           return -1;
         }
         // save the rest of the bits
-        if (w_idx % 8 != 0) {
+        if (w_idx % 8 != 0)
           wbuff[0] = w_idx / 8;
-        }
+        for (size_t i = (w_idx % 8) ? 1 : 0; i < BUFFER_SIZE; ++i)
+          wbuff[i] = 0;
         w_idx %= 8; // reset index to write
         // write last char
         for (size_t j = 0; j < huff_code[c][0]; ++j) {
@@ -98,7 +108,8 @@ int io_write_huffman_code(FILE *wfile, unsigned char **huff_code,
   }
   // Write the remaining bits in the buffer
   if (w_idx > 0) {
-    size_t w_size = w_idx / 8 + (w_idx % 8 != 0 ? 1 : 0);
+    size_t w_size = w_idx / 8 + (w_idx % 8 ? 1 : 0);
+    fprintf(stderr, "gaaaa: %d\n", wbuff[0]);
     if (fwrite(wbuff, sizeof(unsigned char), w_size, wfile) < w_size) {
       fprintf(stderr, "Error writing remaining bits to file.\n");
       fclose(rfile);
