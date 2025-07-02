@@ -125,7 +125,6 @@ int io_write_huffman_code(FILE *wfile, unsigned char **huff_code,
  *
  * */
 
-// TODO: close file
 double io_read_bytes(Node *pq, char *file_name) {
   FILE *file = fopen(file_name, "rb");
   if (file == NULL) {
@@ -141,6 +140,7 @@ double io_read_bytes(Node *pq, char *file_name) {
       ++pq[buffer[i]].frequency;
     }
   }
+  fclose(file);
   return total_bytes;
 }
 

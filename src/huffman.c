@@ -80,7 +80,6 @@ static void hc_inorden(Node *node, unsigned char **code, int depth,
   }
 }
 
-// TODO: Erase waste memory
 static unsigned char **hc_build_code(Node *root) {
   unsigned char **code =
       (unsigned char **)calloc(ALPHABET_SIZE, sizeof(char *));
