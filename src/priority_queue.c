@@ -11,7 +11,14 @@ void pq_new(PriorityQueue *pq, Node *arr, int size) {
   pq->size = 0;
   pq->capacity = size;
   for (int i = 0; i < size; ++i) {
-    pq_push(pq, &arr[i]);
+    // Copy
+    Node *copy = malloc(sizeof(Node));
+    if (copy == NULL) {
+      perror("malloc failed");
+      exit(EXIT_FAILURE);
+    }
+    *copy = arr[i];
+    pq_push(pq, copy);
   }
 }
 
@@ -51,13 +58,6 @@ void pq_push(PriorityQueue *pq, Node *n) {
     fprintf(stderr, "Error: PriorityQueue is full\n");
     exit(EXIT_FAILURE);
   }
-  // Copy
-  Node *copy = malloc(sizeof(Node));
-  if (copy == NULL) {
-    perror("malloc failed");
-    exit(EXIT_FAILURE);
-  }
-  *copy = *n;
   pq->arr[pq->size] = n;
   pq_heapifyUp(pq, pq->size++);
 }

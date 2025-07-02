@@ -1,6 +1,5 @@
 #include "io_tool.h"
 #include "huffman.h"
-#include <cstddef>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
