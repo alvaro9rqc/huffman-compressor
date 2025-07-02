@@ -13,7 +13,7 @@ char compress_encode_files(FILE *file, int argc, char **argv) {
   //  escribir tamaño anterior
   int status = 0;
   for (int i = 1; i < argc - 1; ++i) {
-    Node *root;
+    Node **root;
     printf("Comprimiendo: %s\n", argv[i]);
     unsigned char **huff_code = hc_endoce_file(argv[i], root);
     if (huff_code == NULL) {
@@ -21,7 +21,7 @@ char compress_encode_files(FILE *file, int argc, char **argv) {
       break;
     }
 
-    status = io_save_code(file, argv[i], huff_code, root);
+    status = io_save_code(file, argv[i], huff_code, *root);
     // handle error
     if (status < 0) {
       fprintf(stderr, "Error saving code for file: %s\n", argv[i]);
@@ -29,7 +29,7 @@ char compress_encode_files(FILE *file, int argc, char **argv) {
     }
 
     // free huffman tree
-    hc_free_tree(root);
+    hc_free_tree(*root);
   }
   return status;
   //

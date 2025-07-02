@@ -33,7 +33,7 @@ static int select_nodes(Node *pq, double total) {
 static Node *hc_build_tree(PriorityQueue *pq) {
   int nodes = pq->size;
   for (int i = 0; i < nodes - 1; ++i) {
-    Node *n = malloc(sizeof(Node));
+    Node *n = calloc(1, sizeof(Node));
     n->is_leaf = 0;
     n->left = pq_top(pq);
     pq_pop(pq);
@@ -94,7 +94,7 @@ static unsigned char **hc_build_code(Node *root) {
 // similar a adjacent matrix
 // dynamic array of unsigned char arrays
 // each element contains size code and code
-unsigned char **hc_endoce_file(char *file_name, Node *root) {
+unsigned char **hc_endoce_file(char *file_name, Node **root) {
   // Create nodes
   Node *arr = (Node *)malloc(ALPHABET_SIZE * sizeof(Node));
   // Initialization of each node
@@ -111,12 +111,13 @@ unsigned char **hc_endoce_file(char *file_name, Node *root) {
   // priority queue
   PriorityQueue pq;
   pq_new(&pq, arr, size);
-  // huffman tree
-  root = hc_build_tree(&pq);
-  // huffman code
-  unsigned char **code = hc_build_code(root);
-  pq_erase(&pq);
+  // TODO: error here
   free(arr);
+  // huffman tree
+  *root = hc_build_tree(&pq);
+  pq_erase(&pq);
+  // huffman code
+  unsigned char **code = hc_build_code(*root);
   return code;
 }
 
