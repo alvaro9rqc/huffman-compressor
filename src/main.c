@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
   } else {
     // second argument is compressed file name
     printf("Code: \n");
-    FILE *file = fopen(argv[argc - 1], "w");
+    FILE *file = fopen(argv[argc - 1], "wb");
     compress_encode_files(file, argc, argv);
     fclose(file);
   }
