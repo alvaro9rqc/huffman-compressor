@@ -156,6 +156,7 @@ double io_read_bytes(Node *pq, char *file_name) {
  * 3. Save position to save file size with long long
  * 4. Write file
  * */
+[[nodiscard("Handling error")]]
 int io_save_code(FILE *file, char *filename, unsigned char **huff_code,
                  Node *root) {
   // Write name
@@ -167,6 +168,11 @@ int io_save_code(FILE *file, char *filename, unsigned char **huff_code,
   }
   // Write tree
   io_write_huffman_tree(file, root);
-  io_write_huffman_code(file, huff_code, filename);
+  status = io_write_huffman_code(file, huff_code, filename);
+  // handle error
+  if (status < 0) {
+    fprintf(stderr, "Error writing huffman code for file: %s\n", filename);
+    return -1;
+  }
   return status;
 }
