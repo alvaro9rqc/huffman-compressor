@@ -186,3 +186,48 @@ int io_save_code(FILE *file, char *filename, unsigned char **huff_code,
   }
   return status;
 }
+
+int io_read_filename(FILE *file, char *filename) {
+  int n = 0;
+  char c;
+  while ((c = fgetc(file)) != '\0' && n < 255) {
+    filename[n++] = c;
+  }
+  if (n == 255) {
+    fprintf(stderr, "No se encontró el caracter nulo\n");
+    return -1;
+  }
+  return n;
+}
+
+Node *io_read_huffman_tree(FILE *file) {
+  char is_leaf = fgetc(file);
+  if (is_leaf == EOF) {
+    fprintf(stderr, "Error reading huffman tree: unexpected end of file.\n");
+    return NULL;
+  }
+  Node *root = (Node *)calloc(1, sizeof(Node));
+  if (is_leaf == 1) {
+    char c = fgetc(file);
+    if (c == EOF) {
+      fprintf(stderr, "Error reading huffman tree: unexpected end of file.\n");
+      free(root);
+      return NULL;
+    }
+    root->byte = c;
+    root->is_leaf = 1;
+  } else if (is_leaf == 0) {
+    root->left = io_read_huffman_tree(file);
+    root->right = io_read_huffman_tree(file);
+    if (root->left == NULL || root->right == NULL) {
+      fprintf(stderr, "Error reading huffman tree: incomplete tree.\n");
+      free(root);
+      return NULL;
+    }
+  } else {
+    fprintf(stderr, "Error reading huffman tree: invalid node type.\n");
+    free(root);
+    return NULL;
+  }
+  return root;
+}

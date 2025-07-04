@@ -12,4 +12,7 @@ int io_save_code(FILE *file, char *filename, unsigned char **huff_code,
 
 int io_read_filename(FILE *file, char *filename);
 
+[[nodiscard("Handling error")]]
+Node *io_read_huffman_tree(FILE *file);
+
 #endif
