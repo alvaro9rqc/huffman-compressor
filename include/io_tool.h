@@ -10,4 +10,6 @@ double io_read_bytes(Node *pq, char *file);
 int io_save_code(FILE *file, char *filename, unsigned char **huff_code,
                  Node *root);
 
+int io_read_filename(FILE *file, char *filename);
+
 #endif
