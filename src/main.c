@@ -10,7 +10,12 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   if (strcmp(argv[1], "-d") == 0 || strcmp(argv[1], "-decode") == 0) {
-    printf("Descomprimir\n");
+    printf("Descomprimir %s\n", argv[2]);
+    FILE *file = fopen(argv[2], "rb");
+    int status = decompress_file(file);
+    if (status < 0) {
+      fprintf(stderr, "Error decompressing file: %s\n", argv[2]);
+    }
   } else {
     // second argument is compressed file name
     printf("Code: \n");
