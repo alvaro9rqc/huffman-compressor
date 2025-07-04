@@ -171,7 +171,7 @@ int io_save_code(FILE *file, char *filename, unsigned char **huff_code,
                  Node *root) {
   // Write name
   int status = 0;
-  status = fwrite(filename, sizeof(char), strlen(filename), file);
+  status = fwrite(filename, sizeof(char), strlen(filename) + 1, file);
   if (status < 0) {
     fprintf(stderr, "Error writing filename: %s\n", filename);
     return -1;
