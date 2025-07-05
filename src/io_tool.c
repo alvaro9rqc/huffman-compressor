@@ -202,13 +202,13 @@ int io_read_filename(FILE *file, char *filename) {
 }
 
 Node *io_read_huffman_tree(FILE *file) {
-  char is_leaf = fgetc(file);
-  if (is_leaf == EOF) {
+  char is_internal = fgetc(file);
+  if (is_internal == EOF) {
     fprintf(stderr, "Error reading huffman tree: unexpected end of file.\n");
     return NULL;
   }
   Node *root = (Node *)calloc(1, sizeof(Node));
-  if (is_leaf == 1) {
+  if (is_internal == 0) {
     char c = fgetc(file);
     if (c == EOF) {
       fprintf(stderr, "Error reading huffman tree: unexpected end of file.\n");
@@ -217,7 +217,7 @@ Node *io_read_huffman_tree(FILE *file) {
     }
     root->byte = c;
     root->is_leaf = 1;
-  } else if (is_leaf == 0) {
+  } else if (is_internal == 1) {
     root->left = io_read_huffman_tree(file);
     root->right = io_read_huffman_tree(file);
     if (root->left == NULL || root->right == NULL) {

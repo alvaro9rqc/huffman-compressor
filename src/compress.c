@@ -63,5 +63,20 @@ int decompress_file(FILE *file) {
     hc_free_tree(root);
     return -1;
   }
-  // Read bytes
+  // Write decompressed file
+  FILE *out_file = fopen(filename, "wb");
+  if (out_file == NULL) {
+    fprintf(stderr, "Error opening output file: %s\n", filename);
+    hc_free_tree(root);
+    return -1;
+  }
+  int status = io_write_decompress_file(out_file, file, root, file_size);
+  if (status < 0) {
+    fprintf(stderr, "Error writing decompressed file: %s\n", filename);
+    fclose(out_file);
+    hc_free_tree(root);
+    return -1;
+  }
+  fclose(out_file);
+  return 0;
 }
