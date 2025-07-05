@@ -1,8 +1,10 @@
 #include "io_tool.h"
 #include "huffman.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #define BUFFER_SIZE 4096 // can be parameterized
@@ -119,6 +121,27 @@ int io_write_huffman_code(FILE *wfile, unsigned char **huff_code,
   }
   // close file
   fclose(rfile);
+  return 0;
+}
+
+int io_create_directories(const char *path) {
+  char temp[256];
+  strncpy(temp, path, sizeof(temp) - 1);
+  temp[sizeof(temp) - 1] = '\0';
+
+  for (char *p = temp + 1; *p; p++) {
+    if (*p == '/') {
+      *p = '\0';
+      if (access(temp, F_OK) != 0) {
+        if (mkdir(temp, 0755) != 0 && errno != EEXIST) {
+          perror("mkdir");
+          return -1;
+        }
+      }
+      *p = '/';
+    }
+  }
+
   return 0;
 }
 
@@ -309,6 +332,8 @@ FILE *io_open_unique_file(const char *filename, const char *mode) {
 
   strncpy(new_name, filename, 255);
   new_name[sizeof(new_name) - 1] = '\0';
+
+  io_create_directories(new_name);
 
   while (access(new_name, F_OK) == 0) { // archivo ya existe
     count++;

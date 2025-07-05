@@ -64,7 +64,7 @@ int decompress_file(FILE *file) {
     return -1;
   }
   // Write decompressed file
-  FILE *out_file = fopen(filename, "wb");
+  FILE *out_file = io_open_unique_file(filename, "wb");
   if (out_file == NULL) {
     fprintf(stderr, "Error opening output file: %s\n", filename);
     hc_free_tree(root);
