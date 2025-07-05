@@ -23,3 +23,28 @@ Hi there, since my university (which is public) is currently on strike and my Sy
         - Create file
             - Read encoded bytes and write decoded information
         - Close file
+
+- solution to save file: just save the amount of bytes in the file
+
+# Process of implementation
+
+1. hc_endoce_file
+    1. create priority_queue 
+    2. erase priority_queue
+    3. huffman tree
+        1. pop priority_queue
+        2. build code matrix
+    
+
+
+
+# Promises:
+
+## About compress file
+
+Each huffman code in the file begins at a different byte than were the previous one ends
+
+
+## About huffman tree
+
+- The left child is 0 and the most likely of appearing

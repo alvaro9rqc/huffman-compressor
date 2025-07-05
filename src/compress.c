@@ -42,7 +42,7 @@ char compress_encode_files(FILE *file, int argc, char **argv) {
  */
 int decompress_file(FILE *file) {
   // Read file name
-  while (!feof(file)) {
+  while (!io_is_end_of_file(file)) {
     char filename[256];
     int n = io_read_filename(file, filename);
     if (n < 0) {
@@ -79,6 +79,7 @@ int decompress_file(FILE *file) {
       return -1;
     }
     fclose(out_file);
+    printf("Sucess\n");
   }
   return 0;
 }

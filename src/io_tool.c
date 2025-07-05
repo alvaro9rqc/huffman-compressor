@@ -309,7 +309,7 @@ int io_write_decompress_file(FILE *wfile, FILE *rfile, Node *root,
         // Check if we have decompressed enough bytes
         if (dec_bytes == file_size) {
           // Move the file descriptor to the end of the previous code
-          offset = i - bytes_read + 1;
+          offset = (i >> 3) - bytes_read + 1;
           break;
         }
       }
@@ -326,7 +326,9 @@ int io_write_decompress_file(FILE *wfile, FILE *rfile, Node *root,
       return -1;
     }
   }
+  printf("pos: %ld\n", ftell(rfile));
   fseek(rfile, offset, SEEK_CUR);
+  printf("pos: %ld\n", ftell(rfile));
   return 0; // Decompression complete
 }
 
@@ -352,4 +354,14 @@ FILE *io_open_unique_file(const char *filename, const char *mode) {
     return NULL; // Error opening file
   }
   return fp;
+}
+
+int io_is_end_of_file(FILE *file) {
+  int c = fgetc(file);
+  if (c == EOF) {
+    return 1; // End of file
+  } else {
+    ungetc(c, file); // Put back the character
+    return 0;        // Not end of file
+  }
 }

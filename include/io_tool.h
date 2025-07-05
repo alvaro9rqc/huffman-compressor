@@ -24,4 +24,6 @@ int io_write_decompress_file(FILE *wfile, FILE *rfile, Node *root,
 
 FILE *io_open_unique_file(const char *filename, const char *mode);
 
+int io_is_end_of_file(FILE *file);
+
 #endif
