@@ -75,19 +75,16 @@ int io_write_huffman_code(FILE *wfile, unsigned char **huff_code,
     for (size_t i = 0; i < r_s; ++i) {
       unsigned char c = rbuff[i];
       // if has space
-      printf("\n%c - %3d ", c, huff_code[c][0]);
       if (huff_code[c][0] <= w_lim - w_idx) {
         for (size_t j = 0; j < huff_code[c][0]; ++j) {
           // locate byte and write bit
           size_t ofs = w_idx % 8;
           bit = (huff_code[c][j / 8 + 1] & 1 << (7 - (j % 8))) ? 1 : 0;
           wbuff[w_idx / 8] |= bit << (7 - w_idx % 8);
-          printf("%d ", wbuff[w_idx / 8]);
           ++w_idx;
         }
       } else {
         // write buffer
-        fprintf(stderr, "Gaaa\n");
         size_t w_size = w_idx / 8;
         if (fwrite(wbuff, sizeof(unsigned char), w_size, wfile) < w_size) {
           fprintf(stderr, "Error writing huffman code to file.\n");
@@ -112,7 +109,6 @@ int io_write_huffman_code(FILE *wfile, unsigned char **huff_code,
   // Write the remaining bits in the buffer
   if (w_idx > 0) {
     size_t w_size = w_idx / 8 + (w_idx % 8 ? 1 : 0);
-    fprintf(stderr, "gaaaa: %d\n", wbuff[0]);
     if (fwrite(wbuff, sizeof(unsigned char), w_size, wfile) < w_size) {
       fprintf(stderr, "Error writing remaining bits to file.\n");
       fclose(rfile);
@@ -214,7 +210,17 @@ int io_save_code(FILE *file, char *filename, unsigned char **huff_code,
 int io_read_filename(FILE *file, char *filename) {
   int n = 0;
   char c;
-  while ((c = fgetc(file)) != '\0' && n < 255) {
+  while (n < 255) {
+    c = fgetc(file);
+    if (c == EOF) {
+      if (n == 0) {
+        fprintf(stderr, "Error reading filename: unexpected end of file.\n");
+        return -1; // Error: no filename read
+      }
+      break; // End of filename
+    }
+    if (c == '\0')
+      break; // Null character indicates end of filename
     filename[n++] = c;
   }
   if (n == 255) {
@@ -303,7 +309,7 @@ int io_write_decompress_file(FILE *wfile, FILE *rfile, Node *root,
         // Check if we have decompressed enough bytes
         if (dec_bytes == file_size) {
           // Move the file descriptor to the end of the previous code
-          offset = i - bytes_read;
+          offset = i - bytes_read + 1;
           break;
         }
       }
