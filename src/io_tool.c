@@ -253,6 +253,7 @@ int io_write_decompress_file(FILE *wfile, FILE *rfile, Node *root,
   // Parameters
   off_t dec_bytes = 0;  // Decompressed bytes
   Node *current = root; // Current node in the huffman tree
+  off_t offset = 0;     // Offset in the file
   // Read from file
   while ((bytes_read = fread(read_buffer, 1, BUFFER_SIZE, rfile)) > 0) {
     for (int i = 0; i < bytes_read << 3; ++i) { // For each bit
@@ -266,7 +267,7 @@ int io_write_decompress_file(FILE *wfile, FILE *rfile, Node *root,
         // Add byte to write buffer
         write_buffer[write_index++] = current->byte;
         current = root; // Reset to root
-        dec_bytes++;
+        ++dec_bytes;
         // Write buffer to file
         if (write_index == BUFFER_SIZE) {
           if (fwrite(write_buffer, sizeof(char), write_index, wfile) <
@@ -279,7 +280,8 @@ int io_write_decompress_file(FILE *wfile, FILE *rfile, Node *root,
         // Check if we have decompressed enough bytes
         if (dec_bytes == file_size) {
           // Move the file descriptor to the end of the previous code
-          fseek(rfile, i - bytes_read, SEEK_CUR);
+          offset = i - bytes_read;
+          break;
         }
       }
     }
@@ -295,5 +297,6 @@ int io_write_decompress_file(FILE *wfile, FILE *rfile, Node *root,
       return -1;
     }
   }
+  fseek(rfile, offset, SEEK_CUR);
   return 0; // Decompression complete
 }
