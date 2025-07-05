@@ -16,6 +16,7 @@ int main(int argc, char *argv[]) {
     if (status < 0) {
       fprintf(stderr, "Error decompressing file: %s\n", argv[2]);
     }
+    fclose(file);
   } else {
     // second argument is compressed file name
     printf("Code: \n");
