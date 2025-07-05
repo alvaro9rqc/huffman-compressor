@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define BUFFER_SIZE 4096 // can be parameterized
 
@@ -239,4 +240,60 @@ off_t io_read_file_size(FILE *file) {
     return -1;
   }
   return file_size;
+}
+
+int io_write_decompress_file(FILE *wfile, FILE *rfile, Node *root,
+                             off_t file_size) {
+  // Create read buffer
+  char read_buffer[BUFFER_SIZE];
+  size_t bytes_read;
+  // Create write buffer
+  char write_buffer[BUFFER_SIZE];
+  size_t write_index = 0; // Index in write buffer
+  // Parameters
+  off_t dec_bytes = 0;  // Decompressed bytes
+  Node *current = root; // Current node in the huffman tree
+  // Read from file
+  while ((bytes_read = fread(read_buffer, 1, BUFFER_SIZE, rfile)) > 0) {
+    for (int i = 0; i < bytes_read << 3; ++i) { // For each bit
+      // Tree transition
+      if ((read_buffer[i >> 3] & (1 << (7 - (i % 8))))) {
+        current = current->right; // Go right
+      } else {
+        current = current->left; // Go left
+      }
+      if (current->is_leaf) {
+        // Add byte to write buffer
+        write_buffer[write_index++] = current->byte;
+        current = root; // Reset to root
+        dec_bytes++;
+        // Write buffer to file
+        if (write_index == BUFFER_SIZE) {
+          if (fwrite(write_buffer, sizeof(char), write_index, wfile) <
+              write_index) {
+            fprintf(stderr, "Error writing decompressed data to file.\n");
+            return -1;
+          }
+          write_index = 0; // Reset write index
+        }
+        // Check if we have decompressed enough bytes
+        if (dec_bytes == file_size) {
+          // Move the file descriptor to the end of the previous code
+          fseek(rfile, i - bytes_read, SEEK_CUR);
+        }
+      }
+    }
+  }
+  if (dec_bytes != file_size) {
+    fprintf(stderr, "Decompressed bytes do not match expected file size.\n");
+    return -1; // Error: decompressed bytes do not match expected size
+  }
+  // Write remaining bytes in buffer
+  if (write_index > 0) {
+    if (fwrite(write_buffer, sizeof(char), write_index, wfile) < write_index) {
+      fprintf(stderr, "Error writing remaining decompressed data to file.\n");
+      return -1;
+    }
+  }
+  return 0; // Decompression complete
 }
