@@ -34,3 +34,34 @@ char compress_encode_files(FILE *file, int argc, char **argv) {
   return status;
   //
 }
+
+/* Read file name
+ * Read tree
+ * Read the final bytes of the file
+ * Read code
+ */
+int decompress_file(FILE *file) {
+  // Read file name
+  char filename[256];
+  int n = io_read_filename(file, filename);
+  if (n < 0) {
+    fprintf(stderr, "Error reading filename.\n");
+    return -1;
+  }
+  filename[n] = '\0'; // Null-terminate the string
+  printf("Decompressing file: %s\n", filename);
+  // Read huffman tree
+  Node *root = io_read_huffman_tree(file);
+  if (root == NULL) {
+    fprintf(stderr, "Error reading huffman tree.\n");
+    return -1;
+  }
+  // Read file size
+  off_t file_size = io_read_file_size(file);
+  if (file_size < 0) {
+    fprintf(stderr, "Error reading file size.\n");
+    hc_free_tree(root);
+    return -1;
+  }
+  // Read bytes
+}
