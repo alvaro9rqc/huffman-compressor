@@ -15,4 +15,7 @@ int io_read_filename(FILE *file, char *filename);
 [[nodiscard("Handling error")]]
 Node *io_read_huffman_tree(FILE *file);
 
+[[nodiscard("Handling error")]]
+off_t io_read_file_size(FILE *file);
+
 #endif

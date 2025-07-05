@@ -231,3 +231,12 @@ Node *io_read_huffman_tree(FILE *file) {
   }
   return root;
 }
+
+off_t io_read_file_size(FILE *file) {
+  off_t file_size;
+  if (fread(&file_size, sizeof(off_t), 1, file) < 1) {
+    fprintf(stderr, "Error reading file size.\n");
+    return -1;
+  }
+  return file_size;
+}
