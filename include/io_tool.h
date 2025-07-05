@@ -22,4 +22,6 @@ off_t io_read_file_size(FILE *file);
 int io_write_decompress_file(FILE *wfile, FILE *rfile, Node *root,
                              off_t file_size);
 
+FILE *io_open_unique_file(const char *filename, const char *mode);
+
 #endif

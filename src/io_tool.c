@@ -300,3 +300,25 @@ int io_write_decompress_file(FILE *wfile, FILE *rfile, Node *root,
   fseek(rfile, offset, SEEK_CUR);
   return 0; // Decompression complete
 }
+
+FILE *io_open_unique_file(const char *filename, const char *mode) {
+  char new_name[256];
+  int count = 0;
+
+  FILE *fp = NULL;
+
+  strncpy(new_name, filename, 255);
+  new_name[sizeof(new_name) - 1] = '\0';
+
+  while (access(new_name, F_OK) == 0) { // archivo ya existe
+    count++;
+    snprintf(new_name, sizeof(new_name), "%s.%d", filename, count);
+  }
+
+  fp = fopen(new_name, mode);
+  if (fp == NULL) {
+    fprintf(stderr, "Error opening file: %s\n", new_name);
+    return NULL; // Error opening file
+  }
+  return fp;
+}

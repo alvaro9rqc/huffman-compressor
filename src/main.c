@@ -1,4 +1,5 @@
 #include "compress.h"
+#include "io_tool.h"
 #include <stdio.h>
 #include <string.h>
 int main(int argc, char *argv[]) {
@@ -11,7 +12,8 @@ int main(int argc, char *argv[]) {
   }
   if (strcmp(argv[1], "-d") == 0 || strcmp(argv[1], "-decode") == 0) {
     printf("Descomprimir %s\n", argv[2]);
-    FILE *file = fopen(argv[2], "rb");
+    FILE *file = io_open_unique_file(argv[2], "rb");
+
     int status = decompress_file(file);
     if (status < 0) {
       fprintf(stderr, "Error decompressing file: %s\n", argv[2]);
