@@ -103,11 +103,17 @@ int io_write_huffman_code(FILE *wfile, unsigned char **huff_code,
           fclose(rfile);
           return -1;
         }
-        // save the rest of the bits
-        if (w_idx % 8 != 0)
-          wbuff[0] = w_idx / 8;
-        for (size_t i = (w_idx % 8) ? 1 : 0; i < BUFFER_SIZE; ++i)
+        // save the rest of the bits (preserve partial byte)
+        unsigned char remaining_bits = 0;
+        if (w_idx % 8 != 0) {
+          remaining_bits = wbuff[w_idx / 8];  // Save the partial byte
+        }
+        // Clear buffer and restore partial byte
+        for (size_t i = 0; i < BUFFER_SIZE; ++i)
           wbuff[i] = 0;
+        if (w_idx % 8 != 0) {
+          wbuff[0] = remaining_bits;  // Restore the partial byte
+        }
         w_idx %= 8; // reset index to write
         // write last char
         for (size_t j = 0; j < huff_code[c][0]; ++j) {
