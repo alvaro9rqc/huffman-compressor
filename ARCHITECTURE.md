@@ -78,6 +78,164 @@ compress
    |         |
    |         v
    +-----> io_tool
+
+test_runner
+    ↓
+test_framework ← test_priority_queue
+    ↓           ← test_huffman  
+    ↓           ← test_io_tool
+    ↓           ← test_compress
+    ↓           ← test_integration
+    ↓
+   core ← todos los módulos de prueba
+    ↓
+[módulos principales del proyecto]
 ```
 
 Como se puede ver, `main` depende de `compress`. `compress` depende de `huffman` y `io_tool`. `huffman` a su vez depende de `priority_queue` y `io_tool`. Esta estructura es mayormente jerárquica, con `io_tool` actuando como un servicio de bajo nivel utilizado por múltiples componentes.
+
+## Arquitectura de Pruebas
+
+El proyecto incluye una arquitectura de pruebas completa que valida todas las funcionalidades del sistema. La arquitectura de pruebas sigue los siguientes principios:
+
+### Estructura de Pruebas
+
+```
+tests/
+├── test_framework.h        # Marco de pruebas personalizado
+├── test_framework.c        # Implementación del marco de pruebas
+├── test_priority_queue.c   # Pruebas del módulo de cola de prioridad
+├── test_huffman.c          # Pruebas del algoritmo de Huffman
+├── test_io_tool.c          # Pruebas de herramientas de E/S
+├── test_compress.c         # Pruebas de compresión/descompresión
+├── test_integration.c      # Pruebas de integración end-to-end
+├── test_runner.c           # Ejecutor principal de pruebas
+└── README.md               # Documentación de pruebas
+```
+
+### Niveles de Pruebas
+
+La arquitectura de pruebas implementa múltiples niveles de validación:
+
+#### 1. Pruebas Unitarias
+- **Objetivo**: Validar funciones individuales y componentes aislados
+- **Cobertura**: Cada función pública tiene al menos una prueba
+- **Módulos**: `test_priority_queue.c`, `test_huffman.c`, `test_io_tool.c`
+
+#### 2. Pruebas de Integración  
+- **Objetivo**: Validar la interacción entre módulos
+- **Cobertura**: Flujos de trabajo completos (compresión → descompresión)
+- **Módulos**: `test_compress.c`, `test_integration.c`
+
+#### 3. Pruebas de Sistema
+- **Objetivo**: Validar el comportamiento end-to-end
+- **Cobertura**: Escenarios reales de uso con múltiples archivos
+- **Módulos**: `test_integration.c`
+
+### Marco de Pruebas Personalizado
+
+El proyecto utiliza un marco de pruebas ligero y personalizado que proporciona:
+
+- **Aserciones**: `ASSERT_TRUE`, `ASSERT_EQ`, `ASSERT_NOT_NULL`, etc.
+- **Reportes**: Salida colorizada con estadísticas detalladas
+- **Gestión**: Contadores automáticos de pruebas exitosas/fallidas
+- **Portabilidad**: Solo depende de la biblioteca estándar de C
+
+### Estrategias de Prueba
+
+#### Casos de Prueba Positivos
+- Operaciones exitosas con datos válidos
+- Múltiples archivos y tipos de contenido
+- Roundtrip completo (compresión → descompresión → verificación)
+
+#### Casos de Prueba Negativos
+- Archivos inexistentes o corruptos
+- Datos de entrada inválidos
+- Condiciones de error del sistema
+
+#### Casos Extremos
+- Archivos vacíos
+- Archivos con un solo carácter
+- Archivos con todos los caracteres ASCII
+- Patrones de datos repetitivos
+
+#### Validación de Memoria
+- Detección de memory leaks
+- Liberación correcta de recursos
+- Múltiples ciclos de operación
+
+### Integración con el Sistema de Construcción
+
+Las pruebas están completamente integradas con CMake:
+
+```cmake
+# Habilitar pruebas
+enable_testing()
+
+# Biblioteca del marco de pruebas
+add_library(test_framework STATIC ${TEST_DIR}/test_framework.c)
+
+# Ejecutables de prueba individuales
+add_executable(test_huffman ${TEST_DIR}/test_huffman.c)
+target_link_libraries(test_huffman PRIVATE core test_framework)
+
+# Integración con CTest
+add_test(NAME HuffmanTests COMMAND test_huffman)
+
+# Target personalizado para ejecutar todas las pruebas
+add_custom_target(run_all_tests
+    COMMAND ${CMAKE_CTEST_COMMAND} --verbose
+    DEPENDS test_priority_queue test_huffman test_io_tool test_compress test_integration
+)
+```
+
+### Dependencias de Pruebas
+
+```
+test_runner
+    ↓
+test_framework ← test_priority_queue
+    ↓           ← test_huffman  
+    ↓           ← test_io_tool
+    ↓           ← test_compress
+    ↓           ← test_integration
+    ↓
+   core ← todos los módulos de prueba
+    ↓
+[módulos principales del proyecto]
+```
+
+### Patrones de Diseño en Pruebas
+
+#### Patrón Arrange-Act-Assert
+Cada prueba sigue la estructura:
+1. **Arrange**: Configurar datos de prueba
+2. **Act**: Ejecutar la función bajo prueba  
+3. **Assert**: Verificar el resultado esperado
+4. **Cleanup**: Limpiar recursos
+
+#### Patrón Test Fixture
+- Funciones auxiliares para crear/limpiar datos de prueba
+- Archivos temporales con nombres predecibles
+- Gestión automática de recursos
+
+#### Patrón Builder para Datos de Prueba
+- Funciones helper para crear estructuras de datos complejas
+- Datos de prueba reutilizables entre diferentes casos
+
+### Métricas y Reportes
+
+El sistema de pruebas proporciona:
+
+- **Estadísticas por módulo**: Pruebas ejecutadas/exitosas/fallidas
+- **Salida colorizada**: Verde para éxito, rojo para fallos
+- **Detalles de fallos**: Valores esperados vs. obtenidos
+- **Resumen ejecutivo**: Tasa de éxito general
+
+### Consideraciones de Rendimiento
+
+- **Ejecución paralela**: Pruebas independientes pueden ejecutarse en paralelo
+- **Cleanup automático**: Archivos temporales se eliminan automáticamente
+- **Optimización de E/S**: Minimización de operaciones de archivo en pruebas
+
+Esta arquitectura de pruebas asegura la calidad y confiabilidad del compresor Huffman, proporcionando confianza en todos los niveles del sistema.

@@ -32,6 +32,18 @@ static int select_nodes(Node *pq, double total) {
 // Build Huffman tree
 static Node *hc_build_tree(PriorityQueue *pq) {
   int nodes = pq->size;
+  
+  // Handle empty queue
+  if (nodes == 0) {
+    return NULL;
+  }
+  
+  // Handle single node (single character file)
+  if (nodes == 1) {
+    return pq_top(pq);
+  }
+  
+  // Build tree for multiple nodes
   for (int i = 0; i < nodes - 1; ++i) {
     Node *n = calloc(1, sizeof(Node));
     n->is_leaf = 0;
@@ -56,15 +68,7 @@ static void hc_inorden(Node *node, unsigned char **code, int depth,
       int idx = 1 + i / 8; // this extra one is to save the depth
       code[node->byte][idx] |= (prefix[idx - 1] & (1 << (7 - i % 8)));
     }
-    // just for demostration:
-    fprintf(stderr, "byte length code\n");
-    fprintf(stderr, "%4d ", node->byte);
-    fprintf(stderr, "%6d ", code[node->byte][C_LENGHT]);
-    for (int i = 0; i < depth; ++i) {
-      int idx = 1 + i / 8;
-      int r = (code[node->byte][idx] & (1 << (7 - i % 8))) > 0;
-    }
-    fprintf(stderr, "\n");
+
   } else {
     // visit left children (0)
     hc_inorden(node->left, code, depth + 1, prefix);
@@ -80,6 +84,10 @@ static void hc_inorden(Node *node, unsigned char **code, int depth,
 }
 
 static unsigned char **hc_build_code(Node *root) {
+  if (root == NULL) {
+    return NULL;
+  }
+  
   unsigned char **code =
       (unsigned char **)calloc(ALPHABET_SIZE, sizeof(char *));
   // remember prefix code
@@ -129,7 +137,7 @@ int hc_free_tree(Node *root) {
   return 0;
 }
 
-int hac_free_code(unsigned char **code) {
+int hc_free_code(unsigned char **code) {
   if (code == NULL)
     return 0;
   for (int i = 0; i < ALPHABET_SIZE; ++i) {
