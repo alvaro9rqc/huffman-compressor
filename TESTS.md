@@ -54,7 +54,7 @@ make
 ./test_integration
 
 # Ejecutar todas las pruebas
-make run_all_tests
+make run-tests
 ctest --verbose
 
 # Ejecutar con runner personalizado
