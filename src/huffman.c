@@ -10,23 +10,40 @@
 // Select just nodes with frequency greater than 0
 static int select_nodes(Node *pq, double total) {
   int l = 0, r = ALPHABET_SIZE - 1;
+  
+  // Separate nodes with frequency > 0 from nodes with frequency = 0
   while (l < r) {
-    if (pq[r].frequency == 0 && r >= 0)
-      --r;
-    if (pq[l].frequency && l < ALPHABET_SIZE)
-      ++l;
+    // Find the next zero frequency from the right
+    while (r >= l && pq[r].frequency == 0)
+      r--;
+    // Find the next non-zero frequency from the left  
+    while (l <= r && pq[l].frequency > 0)
+      l++;
+    
+    // Swap if needed
     if (l < r) {
       Node t = pq[r];
       pq[r] = pq[l];
       pq[l] = t;
     }
   }
-  while (pq[l].frequency)
-    ++l;
-  for (int i = 0; i < ALPHABET_SIZE; ++i) {
-    pq[i].frequency /= total;
+  
+  // Count how many nodes have non-zero frequency
+  int count = 0;
+  for (int i = 0; i < ALPHABET_SIZE; i++) {
+    if (pq[i].frequency > 0) {
+      count++;
+    }
   }
-  return l; // return new size
+  
+  // Normalize frequencies
+  for (int i = 0; i < ALPHABET_SIZE; i++) {
+    if (pq[i].frequency > 0) {
+      pq[i].frequency /= total;
+    }
+  }
+  
+  return count; // return number of nodes with non-zero frequency
 }
 
 // Build Huffman tree
