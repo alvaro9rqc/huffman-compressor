@@ -29,16 +29,28 @@ int io_write_in_orden(Node *node, unsigned char *buffer, int index) {
 /*
  * Use BUFFER_SIZE to write the huffman tree
  */
+// Simple recursive tree writing - this is the reference implementation
+static int io_write_node_recursive(FILE *file, Node *node) {
+  if (node->is_leaf) {
+    // Write leaf marker and byte value
+    if (fputc(0, file) == EOF) return -1;
+    if (fputc(node->byte, file) == EOF) return -1;
+  } else {
+    // Write internal node marker
+    if (fputc(1, file) == EOF) return -1;
+    // Write left subtree first
+    if (io_write_node_recursive(file, node->left) != 0) return -1;
+    // Write right subtree second  
+    if (io_write_node_recursive(file, node->right) != 0) return -1;
+  }
+  return 0;
+}
+
 int io_write_huffman_tree(FILE *wfile, Node *root) {
-  int status = 0;
   if (root == NULL)
     return -1;
-  // Write the tree in-order
-  // Precondition: each node has two children or is a leaf
-  unsigned char buffer[BUFFER_SIZE];
-  int size = io_write_in_orden(root, buffer, 0);
-  fwrite(buffer, sizeof(unsigned char), size, wfile);
-  return status;
+  
+  return io_write_node_recursive(wfile, root);
 }
 
 /*
@@ -91,16 +103,24 @@ int io_write_huffman_code(FILE *wfile, unsigned char **huff_code,
           fclose(rfile);
           return -1;
         }
-        // save the rest of the bits
-        if (w_idx % 8 != 0)
-          wbuff[0] = w_idx / 8;
-        for (size_t i = (w_idx % 8) ? 1 : 0; i < BUFFER_SIZE; ++i)
+        // save the rest of the bits (preserve partial byte)
+        unsigned char remaining_bits = 0;
+        if (w_idx % 8 != 0) {
+          remaining_bits = wbuff[w_idx / 8];  // Save the partial byte
+        }
+        // Clear buffer and restore partial byte
+        for (size_t i = 0; i < BUFFER_SIZE; ++i)
           wbuff[i] = 0;
+        if (w_idx % 8 != 0) {
+          wbuff[0] = remaining_bits;  // Restore the partial byte
+        }
         w_idx %= 8; // reset index to write
         // write last char
         for (size_t j = 0; j < huff_code[c][0]; ++j) {
           // locate byte and write bit
-          wbuff[w_idx / 8] |= 1 << (7 - (w_idx % 8));
+          size_t ofs = w_idx % 8;
+          bit = (huff_code[c][j / 8 + 1] & 1 << (7 - (j % 8))) ? 1 : 0;
+          wbuff[w_idx / 8] |= bit << (7 - w_idx % 8);
           ++w_idx;
         }
       }
@@ -230,36 +250,58 @@ int io_read_filename(FILE *file, char *filename) {
   return n;
 }
 
-Node *io_read_huffman_tree(FILE *file) {
-  char is_internal = fgetc(file);
-  if (is_internal == EOF) {
-    fprintf(stderr, "Error reading huffman tree: unexpected end of file.\n");
+// Simple recursive tree reading - matches the writing order exactly
+static Node* io_read_node_recursive(FILE *file) {
+  unsigned char is_internal;
+  if (fread(&is_internal, 1, 1, file) != 1) {
+    return NULL; // End of file reached, this is expected at the end
+  }
+  
+  Node* node = (Node*)calloc(1, sizeof(Node));
+  if (node == NULL) {
+    fprintf(stderr, "Error reading huffman tree: memory allocation failed.\n");
     return NULL;
   }
-  Node *root = (Node *)calloc(1, sizeof(Node));
+  
   if (is_internal == 0) {
-    char c = fgetc(file);
-    if (c == EOF) {
-      fprintf(stderr, "Error reading huffman tree: unexpected end of file.\n");
-      free(root);
+    // Leaf node
+    unsigned char c;
+    if (fread(&c, 1, 1, file) != 1) {
+      fprintf(stderr, "Error reading huffman tree: unexpected end of file reading leaf byte.\n");
+      free(node);
       return NULL;
     }
-    root->byte = c;
-    root->is_leaf = 1;
+    node->byte = c;
+    node->is_leaf = 1;
+    node->left = NULL;
+    node->right = NULL;
   } else if (is_internal == 1) {
-    root->left = io_read_huffman_tree(file);
-    root->right = io_read_huffman_tree(file);
-    if (root->left == NULL || root->right == NULL) {
-      fprintf(stderr, "Error reading huffman tree: incomplete tree.\n");
-      free(root);
+    // Internal node
+    node->is_leaf = 0;
+    // Read left subtree first (matches writing order)
+    node->left = io_read_node_recursive(file);
+    if (node->left == NULL) {
+      free(node);
+      return NULL;
+    }
+    // Read right subtree second (matches writing order)
+    node->right = io_read_node_recursive(file);
+    if (node->right == NULL) {
+      hc_free_tree(node->left);
+      free(node);
       return NULL;
     }
   } else {
-    fprintf(stderr, "Error reading huffman tree: invalid node type.\n");
-    free(root);
+    fprintf(stderr, "Error reading huffman tree: invalid node type %d.\n", (int)is_internal);
+    free(node);
     return NULL;
   }
-  return root;
+  
+  return node;
+}
+
+Node *io_read_huffman_tree(FILE *file) {
+  return io_read_node_recursive(file);
 }
 
 off_t io_read_file_size(FILE *file) {
@@ -283,8 +325,10 @@ int io_write_decompress_file(FILE *wfile, FILE *rfile, Node *root,
   off_t dec_bytes = 0;  // Decompressed bytes
   Node *current = root; // Current node in the huffman tree
   off_t offset = 0;     // Offset in the file
+  int should_break = 0; // Flag to break out of outer loop
+  
   // Read from file
-  while ((bytes_read = fread(read_buffer, 1, BUFFER_SIZE, rfile)) > 0) {
+  while ((bytes_read = fread(read_buffer, 1, BUFFER_SIZE, rfile)) > 0 && !should_break) {
     for (int i = 0; i < bytes_read << 3; ++i) { // For each bit
       // Tree transition
       if ((read_buffer[i >> 3] & (1 << (7 - (i % 8))))) {
@@ -310,11 +354,13 @@ int io_write_decompress_file(FILE *wfile, FILE *rfile, Node *root,
         if (dec_bytes == file_size) {
           // Move the file descriptor to the end of the previous code
           offset = (i >> 3) - bytes_read + 1;
-          break;
+          should_break = 1; // Set flag to break out of outer loop
+          break; // Break out of inner loop
         }
       }
     }
   }
+  
   if (dec_bytes != file_size) {
     fprintf(stderr, "Decompressed bytes do not match expected file size.\n");
     return -1; // Error: decompressed bytes do not match expected size

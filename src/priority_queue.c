@@ -4,21 +4,23 @@
 
 char pq_is_full(PriorityQueue *pq) { return pq->size == pq->capacity; }
 
-char pq_is_empty(PriorityQueue *pq) { return pq->arr[0] == NULL; }
+char pq_is_empty(PriorityQueue *pq) { return pq->size == 0; }
 
 void pq_new(PriorityQueue *pq, Node *arr, int size) {
   pq->arr = (Node **)calloc(size, sizeof(Node *));
   pq->size = 0;
   pq->capacity = size;
-  for (int i = 0; i < size; ++i) {
-    // Copy
-    Node *copy = malloc(sizeof(Node));
-    if (copy == NULL) {
-      perror("malloc failed");
-      exit(EXIT_FAILURE);
+  if (arr != NULL) {
+    for (int i = 0; i < size; ++i) {
+      // Copy
+      Node *copy = malloc(sizeof(Node));
+      if (copy == NULL) {
+        perror("malloc failed");
+        exit(EXIT_FAILURE);
+      }
+      *copy = arr[i];
+      pq_push(pq, copy);
     }
-    *copy = arr[i];
-    pq_push(pq, copy);
   }
 }
 
@@ -27,7 +29,7 @@ void pq_erase(PriorityQueue *pq) { free(pq->arr); }
 void pq_heapifyUp(PriorityQueue *pq, int idx) {
   int p;
   while (idx > 0 &&
-         pq->arr[idx]->frequency < pq->arr[p = (idx - 1) >> 2]->frequency) {
+         pq->arr[idx]->frequency < pq->arr[p = (idx - 1) / 2]->frequency) {
     Node *t = pq->arr[idx];
     pq->arr[idx] = pq->arr[p];
     pq->arr[p] = t;
@@ -54,12 +56,13 @@ void pq_heapifyDown(PriorityQueue *pq, int idx) {
 }
 
 void pq_push(PriorityQueue *pq, Node *n) {
-  if (pq_is_full(pq) && pq->size != 0) {
+  if (pq_is_full(pq)) {
     fprintf(stderr, "Error: PriorityQueue is full\n");
     exit(EXIT_FAILURE);
   }
   pq->arr[pq->size] = n;
-  pq_heapifyUp(pq, pq->size++);
+  pq_heapifyUp(pq, pq->size);
+  pq->size++;
 }
 
 Node *pq_top(PriorityQueue *pq) {
@@ -68,8 +71,6 @@ Node *pq_top(PriorityQueue *pq) {
             "Error, se intentó extraer elemento de cola de prioridad vacía\n");
     exit(EXIT_FAILURE);
   }
-  fprintf(stderr, "p: %p v: %d f: %f\n", pq->arr[0], pq->arr[0]->byte,
-          pq->arr[0]->frequency);
   return pq->arr[0];
 }
 
@@ -79,6 +80,9 @@ void pq_pop(PriorityQueue *pq) {
             "Error, se intentó extraer elemento de cola de prioridad vacía\n");
     exit(EXIT_FAILURE);
   }
-  pq->arr[0] = pq->arr[--(pq->size)];
-  pq_heapifyDown(pq, 0);
+  pq->size--;
+  if (pq->size > 0) {
+    pq->arr[0] = pq->arr[pq->size];
+    pq_heapifyDown(pq, 0);
+  }
 }
